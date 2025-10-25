@@ -1,0 +1,2 @@
+# redmine_issue_summary_filter
+チケットのサマリー画面にフィルターを追加するプラグイン
