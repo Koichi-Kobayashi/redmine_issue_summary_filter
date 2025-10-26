@@ -7,8 +7,8 @@
 
 .filter-row {
   display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
-  gap: 30px !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 15px !important;
 }
 
 .filter-field {
@@ -102,9 +102,7 @@
                    value="<%= filter_params && filter_params[:created_on_to] ? filter_params[:created_on_to] : '' %>" 
                    class="filter-select">
           </div>
-        </div>
-        
-        <div class="filter-row">
+          
           <div class="filter-field">
             <label for="filter_updated_on_from">更新日（開始）</label>
             <input type="date" id="filter_updated_on_from" name="filter[updated_on_from]" 
@@ -144,9 +142,19 @@
               <% end %>
             </select>
           </div>
-        </div>
-        
-        <div class="filter-row">
+          
+          <div class="filter-field">
+            <label for="filter_fixed_version_id">バージョン</label>
+            <select id="filter_fixed_version_id" name="filter[fixed_version_id][]" multiple class="filter-select filter-multi-select">
+              <option value="">すべて</option>
+              <% project.shared_versions.each do |version| %>
+                <option value="<%= version.id %>" <%= 'selected' if filter_params && filter_params[:fixed_version_id] && filter_params[:fixed_version_id].include?(version.id.to_s) %>>
+                  <%= version.name %>
+                </option>
+              <% end %>
+            </select>
+          </div>
+          
           <div class="filter-field">
             <label for="filter_assigned_to_id">担当者</label>
             <select id="filter_assigned_to_id" name="filter[assigned_to_id][]" multiple class="filter-select filter-multi-select">
@@ -158,7 +166,9 @@
               <% end %>
             </select>
           </div>
-          
+        </div>
+        
+        <div class="filter-row">
           <div class="filter-field">
             <label for="filter_tracker_id">トラッカー</label>
             <select id="filter_tracker_id" name="filter[tracker_id][]" multiple class="filter-select filter-multi-select">
@@ -170,9 +180,7 @@
               <% end %>
             </select>
           </div>
-        </div>
-        
-        <div class="filter-row">
+          
           <div class="filter-field">
             <label for="filter_category_id">カテゴリ</label>
             <select id="filter_category_id" name="filter[category_id][]" multiple class="filter-select filter-multi-select">
@@ -181,18 +189,6 @@
                 <% should_select = filter_params && filter_params[:category_id] && filter_params[:category_id].include?(category.id.to_s) %>
                 <option value="<%= category.id %>" <%= 'selected' if should_select %>>
                   <%= category.name %>
-                </option>
-              <% end %>
-            </select>
-          </div>
-          
-          <div class="filter-field">
-            <label for="filter_fixed_version_id">バージョン</label>
-            <select id="filter_fixed_version_id" name="filter[fixed_version_id][]" multiple class="filter-select filter-multi-select">
-              <option value="">すべて</option>
-              <% project.shared_versions.each do |version| %>
-                <option value="<%= version.id %>" <%= 'selected' if filter_params && filter_params[:fixed_version_id] && filter_params[:fixed_version_id].include?(version.id.to_s) %>>
-                  <%= version.name %>
                 </option>
               <% end %>
             </select>
