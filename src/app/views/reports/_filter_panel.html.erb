@@ -1,0 +1,432 @@
+<style>
+.filter-rows {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+}
+
+.filter-row {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 30px !important;
+}
+
+.filter-field {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+@media (max-width: 768px) {
+  .filter-row {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+  }
+}
+
+.filter-panel {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  padding: 20px;
+  margin: 20px 0;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filter-panel h3 {
+  margin-top: 0;
+  color: #495057;
+}
+
+.filter-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-actions button {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  background-color: #f8f8f8;
+  color: #333;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  margin-right: 5px;
+}
+
+.filter-actions button:hover {
+  background-color: #e8e8e8;
+  border-color: #999;
+}
+
+.filter-actions button:active {
+  background-color: #ddd;
+}
+
+.filter-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  min-height: 80px;
+  height: auto;
+}
+</style>
+
+<% 
+  Rails.logger.info "=== FILTER PANEL RENDERING DEBUG ==="
+  Rails.logger.info "filter_params: #{filter_params.inspect}"
+  Rails.logger.info "filter_params is nil?: #{filter_params.nil?}"
+  Rails.logger.info "filter_params is present?: #{filter_params.present?}"
+  if filter_params
+    Rails.logger.info "filter_params[:category_id]: #{filter_params[:category_id].inspect}"
+    if filter_params[:category_id]
+      Rails.logger.info "filter_params[:category_id] include '5'?: #{filter_params[:category_id].include?('5')}"
+      Rails.logger.info "filter_params[:category_id] include 5?: #{filter_params[:category_id].include?(5)}"
+    end
+  end
+%>
+
+<div id="redmine-issue-summary-filter-panel" class="filter-panel">
+  <h3>🔍 チケットフィルター</h3>
+  
+  <form method="get" id="redmine-issue-filter-form">
+    <div class="filter-container">
+      <div class="filter-rows">
+        <div class="filter-row">
+          <div class="filter-field">
+            <label for="filter_status_id">ステータス</label>
+            <select id="filter_status_id" name="filter[status_id][]" multiple class="filter-select filter-multi-select">
+              <option value="">すべて</option>
+              <% project.rolled_up_statuses.sorted.each do |status| %>
+                <option value="<%= status.id %>" <%= 'selected' if filter_params && filter_params[:status_id] && filter_params[:status_id].include?(status.id.to_s) %>>
+                  <%= status.name %>
+                </option>
+              <% end %>
+            </select>
+          </div>
+          
+          <div class="filter-field">
+            <label for="filter_priority_id">優先度</label>
+            <select id="filter_priority_id" name="filter[priority_id][]" multiple class="filter-select filter-multi-select">
+              <option value="">すべて</option>
+              <% IssuePriority.active.each do |priority| %>
+                <option value="<%= priority.id %>" <%= 'selected' if filter_params && filter_params[:priority_id] && filter_params[:priority_id].include?(priority.id.to_s) %>>
+                  <%= priority.name %>
+                </option>
+              <% end %>
+            </select>
+          </div>
+        </div>
+        
+        <div class="filter-row">
+          <div class="filter-field">
+            <label for="filter_assigned_to_id">担当者</label>
+            <select id="filter_assigned_to_id" name="filter[assigned_to_id][]" multiple class="filter-select filter-multi-select">
+              <option value="">すべて</option>
+              <% project.assignable_users.each do |user| %>
+                <option value="<%= user.id %>" <%= 'selected' if filter_params && filter_params[:assigned_to_id] && filter_params[:assigned_to_id].include?(user.id.to_s) %>>
+                  <%= user.name %>
+                </option>
+              <% end %>
+            </select>
+          </div>
+          
+          <div class="filter-field">
+            <label for="filter_tracker_id">トラッカー</label>
+            <select id="filter_tracker_id" name="filter[tracker_id][]" multiple class="filter-select filter-multi-select">
+              <option value="">すべて</option>
+              <% project.rolled_up_trackers.each do |tracker| %>
+                <option value="<%= tracker.id %>" <%= 'selected' if filter_params && filter_params[:tracker_id] && filter_params[:tracker_id].include?(tracker.id.to_s) %>>
+                  <%= tracker.name %>
+                </option>
+              <% end %>
+            </select>
+          </div>
+        </div>
+        
+        <div class="filter-row">
+          <div class="filter-field">
+            <label for="filter_category_id">カテゴリ</label>
+            <select id="filter_category_id" name="filter[category_id][]" multiple class="filter-select filter-multi-select">
+              <option value="">すべて</option>
+              <% project.issue_categories.each do |category| %>
+                <% 
+                  should_select = filter_params && filter_params[:category_id] && filter_params[:category_id].include?(category.id.to_s)
+                  Rails.logger.info "Category #{category.id} (#{category.name}): should_select=#{should_select}, category_id in filter_params: #{(filter_params && filter_params[:category_id] && filter_params[:category_id].include?(category.id.to_s)).inspect}"
+                %>
+                <option value="<%= category.id %>" <%= 'selected' if should_select %>>
+                  <%= category.name %>
+                </option>
+              <% end %>
+            </select>
+          </div>
+          
+          <div class="filter-field">
+            <label for="filter_fixed_version_id">バージョン</label>
+            <select id="filter_fixed_version_id" name="filter[fixed_version_id][]" multiple class="filter-select filter-multi-select">
+              <option value="">すべて</option>
+              <% project.shared_versions.each do |version| %>
+                <option value="<%= version.id %>" <%= 'selected' if filter_params && filter_params[:fixed_version_id] && filter_params[:fixed_version_id].include?(version.id.to_s) %>>
+                  <%= version.name %>
+                </option>
+              <% end %>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="filter-actions">
+        <button type="button" onclick="applyFilter()">フィルター適用</button>
+        <button type="button" onclick="clearFilter()">クリア</button>
+        <button type="button" onclick="resetFilter()">リセット</button>
+        <button type="button" onclick="saveFilter()">保存</button>
+        <button type="button" onclick="loadFilter()">読み込み</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+function applyFilter() {
+  console.log('=== APPLY FILTER CALLED ===');
+  console.log('Applying filter...');
+  const form = document.getElementById('redmine-issue-filter-form');
+  if (!form) {
+    console.error('Filter form not found');
+    return;
+  }
+  console.log('Filter form found:', form);
+  
+  // フォームのaction属性を設定
+  const currentPath = window.location.pathname;
+  form.action = currentPath;
+  
+  const params = new URLSearchParams();
+  
+  // フィルターパラメータを構築
+  const selects = document.querySelectorAll('.filter-multi-select');
+  selects.forEach(select => {
+    const fieldName = select.name;
+    const selectedValues = Array.from(select.selectedOptions).map(option => option.value);
+    
+    console.log(`Field ${fieldName}: selected values =`, selectedValues);
+    
+    // 「すべて」が選択されているかチェック
+    const hasAllSelected = selectedValues.includes('');
+    const hasOtherValues = selectedValues.some(v => v !== '');
+    
+    if (hasAllSelected && hasOtherValues) {
+      // 「すべて」と他の値が両方選択されている場合は、「すべて」を優先
+      console.log(`Field ${fieldName}: All selected, skipping filter`);
+    } else if (hasOtherValues) {
+      // 他の値が選択されている場合は、それらの値のみを送信
+      selectedValues.filter(v => v !== '').forEach(value => {
+        params.append(fieldName, value);
+      });
+      console.log(`Field ${fieldName}: Sending values:`, selectedValues.filter(v => v !== ''));
+    } else {
+      // 「すべて」のみが選択されている場合は、フィルターを送信しない
+      console.log(`Field ${fieldName}: All selected, no filter applied`);
+    }
+  });
+  
+  const url = currentPath + '?' + params.toString();
+  console.log('Final URL:', url);
+  console.log('Params:', params.toString());
+  window.location.href = url;
+}
+
+function clearFilter() {
+  const selects = document.querySelectorAll('.filter-multi-select');
+  selects.forEach(select => {
+    select.selectedIndex = -1;
+  });
+  applyFilter();
+}
+
+function resetFilter() {
+  const selects = document.querySelectorAll('.filter-multi-select');
+  selects.forEach(select => {
+    select.selectedIndex = 0; // 「すべて」を選択
+  });
+  applyFilter();
+}
+
+function saveFilter() {
+  const filterData = {};
+  const selects = document.querySelectorAll('.filter-multi-select');
+  
+  selects.forEach(select => {
+    const fieldName = select.name.replace('filter[', '').replace('][]', '');
+    const selectedValues = Array.from(select.selectedOptions).map(option => option.value).filter(v => v !== '');
+    if (selectedValues.length > 0) {
+      filterData[fieldName] = selectedValues;
+    }
+  });
+  
+  const projectId = window.location.pathname.split('/')[2];
+  localStorage.setItem('redmine_issue_filter_' + projectId, JSON.stringify(filterData));
+  alert('フィルター設定を保存しました');
+}
+
+function loadFilter() {
+  const projectId = window.location.pathname.split('/')[2];
+  const savedData = localStorage.getItem('redmine_issue_filter_' + projectId);
+  if (!savedData) {
+    alert('保存されたフィルター設定がありません');
+    return;
+  }
+  
+  try {
+    const filterData = JSON.parse(savedData);
+    const selects = document.querySelectorAll('.filter-multi-select');
+    
+    selects.forEach(select => {
+      const fieldName = select.name.replace('filter[', '').replace('][]', '');
+      if (filterData[fieldName]) {
+        Array.from(select.options).forEach(option => {
+          option.selected = filterData[fieldName].includes(option.value);
+        });
+      } else {
+        // 保存されていないフィールドは「すべて」を選択
+        select.selectedIndex = 0;
+      }
+    });
+    
+    alert('フィルター設定を読み込みました');
+  } catch (e) {
+    alert('フィルター設定の読み込みに失敗しました');
+  }
+}
+
+console.log('Redmine Issue Summary Filter loaded');
+
+// コンボボックスの選択状態を管理
+function setupSelectBehavior() {
+  const selects = document.querySelectorAll('.filter-multi-select');
+  selects.forEach(select => {
+    // 初期状態を「すべて」に設定
+    const allOption = select.querySelector('option[value=""]');
+    if (allOption && !select.querySelector('option:checked')) {
+      allOption.selected = true;
+    }
+    
+    select.addEventListener('change', function() {
+      const selectedValues = Array.from(this.selectedOptions).map(option => option.value);
+      const hasAllSelected = selectedValues.includes('');
+      const hasOtherValues = selectedValues.some(v => v !== '');
+      
+      if (hasAllSelected && hasOtherValues) {
+        // 「すべて」と他の値が両方選択されている場合は、「すべて」を解除
+        const allOption = this.querySelector('option[value=""]');
+        if (allOption) {
+          allOption.selected = false;
+        }
+        console.log(`Removed "All" selection from ${this.name}`);
+      } else if (!hasAllSelected && !hasOtherValues) {
+        // 何も選択されていない場合は、「すべて」を選択
+        const allOption = this.querySelector('option[value=""]');
+        if (allOption) {
+          allOption.selected = true;
+        }
+        console.log(`Set "All" selection for ${this.name}`);
+      }
+    });
+  });
+}
+
+// URLパラメータから選択状態を復元
+function restoreFilterFromURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const filterParams = {};
+  
+  // filter[field_name][] 形式のパラメータを取得
+  urlParams.forEach((value, key) => {
+    // filter[status_id][] のような形式を処理
+    const match = key.match(/filter\[(.+)\]/);
+    if (match) {
+      const fieldName = match[1];
+      if (!filterParams[fieldName]) {
+        filterParams[fieldName] = [];
+      }
+      filterParams[fieldName].push(value);
+    }
+  });
+  
+  console.log('Restoring filter from URL:', filterParams);
+  
+  // 各selectを更新
+  const selects = document.querySelectorAll('.filter-multi-select');
+  selects.forEach(select => {
+    // select.name は "filter[priority_id][]" のような形式
+    const match = select.name.match(/filter\[(.+)\]\[\]/);
+    if (match) {
+      const fieldName = match[1];
+      console.log(`Field ${fieldName}: checking for values`, filterParams[fieldName]);
+      
+      if (filterParams[fieldName]) {
+        Array.from(select.options).forEach(option => {
+          option.selected = filterParams[fieldName].includes(option.value);
+        });
+      } else {
+        // フィルターが指定されていない場合は、「すべて」を選択
+        select.selectedIndex = 0;
+      }
+    }
+  });
+}
+
+// フィルターパネルをレポートの下に移動
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM loaded, checking for filter panel...');
+  
+  // URLパラメータから選択状態を復元（サーバーサイドで選択されていない場合のみ）
+  // RubyのERBで既に選択されている場合は、JavaScriptで上書きしない
+  // restoreFilterFromURL();
+  
+  // 既存のフィルターパネルをチェック
+  let existingPanel = document.getElementById('redmine-issue-summary-filter-panel');
+  if (existingPanel) {
+    console.log('Filter panel found, moving to report section...');
+    
+    // 「レポート」の見出しを探す
+    const reportHeading = document.querySelector('h2');
+    if (reportHeading && reportHeading.textContent.includes('レポート')) {
+      // レポート見出しの直後に挿入
+      reportHeading.parentNode.insertBefore(existingPanel, reportHeading.nextSibling);
+      console.log('Filter panel moved to after report heading');
+    } else {
+      // フォールバック: レポートテーブルの最初の前に挿入
+      const firstTable = document.querySelector('table');
+      if (firstTable) {
+        firstTable.parentNode.insertBefore(existingPanel, firstTable);
+        console.log('Filter panel moved to before first table');
+      } else {
+        console.log('Could not find suitable insertion point');
+      }
+    }
+    
+    // フォームのaction属性を確実に設定
+    const filterForm = document.getElementById('redmine-issue-filter-form');
+    if (filterForm) {
+      const currentPath = window.location.pathname;
+      filterForm.action = currentPath;
+      console.log('Form action set to:', currentPath);
+      
+      // フォームの送信イベントを追加
+      filterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        applyFilter();
+      });
+    }
+    
+    // コンボボックスの動作を設定
+    setupSelectBehavior();
+  } else {
+    console.log('No existing filter panel found');
+  }
+});
+</script>
