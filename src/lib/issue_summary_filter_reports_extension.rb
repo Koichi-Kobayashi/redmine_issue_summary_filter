@@ -25,6 +25,10 @@ module IssueSummaryFilterReportsExtension
                   filter_conditions[:created_on_from] = values
                 elsif key.to_s == 'created_on_to' && values.present?
                   filter_conditions[:created_on_to] = values
+                elsif key.to_s == 'updated_on_from' && values.present?
+                  filter_conditions[:updated_on_from] = values
+                elsif key.to_s == 'updated_on_to' && values.present?
+                  filter_conditions[:updated_on_to] = values
                 end
               end
             end
@@ -66,9 +70,9 @@ module IssueSummaryFilterReportsExtension
         base_scope = Issue.visible.where(@project.project_condition(with_subprojects))
         
         # Apply regular filter conditions (excluding date conditions)
-        filtered_scope = base_scope.where(filter_conditions.reject { |k| [:created_on_from, :created_on_to].include?(k) })
+        filtered_scope = base_scope.where(filter_conditions.reject { |k| [:created_on_from, :created_on_to, :updated_on_from, :updated_on_to].include?(k) })
         
-        # Apply date conditions separately
+        # Apply created_on date conditions separately
         if filter_conditions[:created_on_from].present?
           filtered_scope = filtered_scope.where('issues.created_on >= ?', filter_conditions[:created_on_from])
         end
@@ -76,6 +80,16 @@ module IssueSummaryFilterReportsExtension
         if filter_conditions[:created_on_to].present?
           # Include the entire end date (until end of day)
           filtered_scope = filtered_scope.where('issues.created_on <= ?', "#{filter_conditions[:created_on_to]} 23:59:59")
+        end
+        
+        # Apply updated_on date conditions separately
+        if filter_conditions[:updated_on_from].present?
+          filtered_scope = filtered_scope.where('issues.updated_on >= ?', filter_conditions[:updated_on_from])
+        end
+        
+        if filter_conditions[:updated_on_to].present?
+          # Include the entire end date (until end of day)
+          filtered_scope = filtered_scope.where('issues.updated_on <= ?', "#{filter_conditions[:updated_on_to]} 23:59:59")
         end
         
         # Get statuses for the view
