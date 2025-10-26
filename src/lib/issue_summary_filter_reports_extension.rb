@@ -38,25 +38,176 @@ module IssueSummaryFilterReportsExtension
         old_filter = params[:filter]
         params.delete(:filter)
         
-        # Call the original method
-        issue_report_without_plugin_filtering
+        # If filters exist, get filtered data BEFORE calling original method
+        if filter_conditions.any?
+          Rails.logger.info "Applying filter conditions BEFORE calling original: #{filter_conditions.inspect}"
+          
+          # Get filtered data before original method is called
+          get_filtered_report_data(filter_conditions)
+        else
+          # Call the original method if no filters
+          issue_report_without_plugin_filtering
+        end
         
         # Restore filter
         params[:filter] = old_filter if old_filter
         
-        # Apply filters to the data
-        if filter_conditions.any?
-          Rails.logger.info "Applying filter conditions: #{filter_conditions.inspect}"
-          
-          # Filter each report data array
-          filter_report_data_direct(filter_conditions)
-          
-          Rails.logger.info "After filter - @issues_by_tracker count: #{@issues_by_tracker&.size || 0}"
+        # If filters were applied, we already have the filtered data
+        Rails.logger.info "After filtering - @issues_by_tracker count: #{@issues_by_tracker&.size || 0}"
+      end
+      
+      def get_filtered_report_data(filter_conditions)
+        with_subprojects = Setting.display_subprojects_issues?
+        
+        # Set up the basic data structures
+        @trackers = @project.rolled_up_trackers(with_subprojects).visible
+        @versions = @project.shared_versions.sorted + [Version.new(:name => "[#{l(:label_none)}]")]
+        @priorities = IssuePriority.all.reverse
+        @categories = @project.issue_categories + [IssueCategory.new(:name => "[#{l(:label_none)}]")]
+        @assignees = (Setting.issue_group_assignment? ? @project.principals : @project.users).sorted + [User.new(:firstname => "[#{l(:label_none)}]")]
+        @authors = @project.users.sorted
+        @subprojects = @project.descendants.visible
+        
+        # Get base issue scope with filters
+        base_scope = Issue.visible.where(@project.project_condition(with_subprojects))
+        filtered_scope = base_scope.where(filter_conditions)
+        
+        Rails.logger.info "Base scope count: #{base_scope.count}"
+        Rails.logger.info "Filtered scope count: #{filtered_scope.count}"
+        
+        # Get statuses for the view
+        @statuses = @project.rolled_up_statuses
+        
+        # Build filtered report data
+        @issues_by_tracker = build_filtered_by_tracker(filtered_scope, @trackers)
+        @issues_by_version = build_filtered_by_version(filtered_scope, @versions)
+        @issues_by_priority = build_filtered_by_priority(filtered_scope, @priorities)
+        @issues_by_category = build_filtered_by_category(filtered_scope, @categories)
+        @issues_by_assigned_to = build_filtered_by_assigned_to(filtered_scope, @assignees)
+        @issues_by_author = build_filtered_by_author(filtered_scope, @authors)
+        @issues_by_subproject = build_filtered_by_subproject(filtered_scope, @subprojects) || []
+      end
+      
+      def build_filtered_by_tracker(scope, trackers)
+        data = []
+        scope.joins(:tracker).joins(:status)
+             .group(:tracker_id, :status_id, :is_closed)
+             .count
+             .each do |(tracker_id, status_id, is_closed), count|
+          data << {
+            "tracker_id" => tracker_id.to_s,
+            "status_id" => status_id.to_s,
+            "closed" => ['t', 'true', '1'].include?(is_closed.to_s),
+            "total" => count.to_s
+          }
         end
+        data
+      end
+      
+      def build_filtered_by_version(scope, versions)
+        data = []
+        scope.left_joins(:fixed_version).joins(:status)
+             .group(:fixed_version_id, :status_id, :is_closed)
+             .count
+             .each do |(version_id, status_id, is_closed), count|
+          data << {
+            "fixed_version_id" => version_id.to_s,
+            "status_id" => status_id.to_s,
+            "closed" => ['t', 'true', '1'].include?(is_closed.to_s),
+            "total" => count.to_s
+          }
+        end
+        data
+      end
+      
+      def build_filtered_by_priority(scope, priorities)
+        data = []
+        scope.joins(:priority).joins(:status)
+             .group(:priority_id, :status_id, :is_closed)
+             .count
+             .each do |(priority_id, status_id, is_closed), count|
+          data << {
+            "priority_id" => priority_id.to_s,
+            "status_id" => status_id.to_s,
+            "closed" => ['t', 'true', '1'].include?(is_closed.to_s),
+            "total" => count.to_s
+          }
+        end
+        data
+      end
+      
+      def build_filtered_by_category(scope, categories)
+        data = []
+        scope.left_joins(:category).joins(:status)
+             .group(:category_id, :status_id, :is_closed)
+             .count
+             .each do |(category_id, status_id, is_closed), count|
+          data << {
+            "category_id" => category_id.to_s,
+            "status_id" => status_id.to_s,
+            "closed" => ['t', 'true', '1'].include?(is_closed.to_s),
+            "total" => count.to_s
+          }
+        end
+        data
+      end
+      
+      def build_filtered_by_assigned_to(scope, assignees)
+        data = []
+        scope.left_joins(:assigned_to).joins(:status)
+             .group(:assigned_to_id, :status_id, :is_closed)
+             .count
+             .each do |(assigned_to_id, status_id, is_closed), count|
+          data << {
+            "assigned_to_id" => assigned_to_id.to_s,
+            "status_id" => status_id.to_s,
+            "closed" => ['t', 'true', '1'].include?(is_closed.to_s),
+            "total" => count.to_s
+          }
+        end
+        data
+      end
+      
+      def build_filtered_by_author(scope, authors)
+        data = []
+        scope.joins(:author).joins(:status)
+             .group(:author_id, :status_id, :is_closed)
+             .count
+             .each do |(author_id, status_id, is_closed), count|
+          data << {
+            "author_id" => author_id.to_s,
+            "status_id" => status_id.to_s,
+            "closed" => ['t', 'true', '1'].include?(is_closed.to_s),
+            "total" => count.to_s
+          }
+        end
+        data
+      end
+      
+      def build_filtered_by_subproject(scope, subprojects)
+        data = []
+        scope.joins(:project).joins(:status)
+             .group(:project_id, :status_id, :is_closed)
+             .count
+             .each do |(project_id, status_id, is_closed), count|
+          data << {
+            "project_id" => project_id.to_s,
+            "status_id" => status_id.to_s,
+            "closed" => ['t', 'true', '1'].include?(is_closed.to_s),
+            "total" => count.to_s
+          }
+        end
+        data
+      end
+      
+      def filter_report_data_direct(filter_conditions)
+        # This method is no longer used, but kept for compatibility
       end
       
       alias_method :issue_report_without_plugin_filtering, :issue_report
       alias_method :issue_report, :issue_report_with_original_filter
+      
+      private
       
       def build_filter_conditions
         conditions = {}
@@ -228,84 +379,6 @@ module IssueSummaryFilterReportsExtension
         else
           @filtered_issues_count = 0
           @filtered_issues = []
-        end
-      end
-      
-      def filter_report_data_direct(filter_conditions)
-        Rails.logger.info "Filtering report data directly with conditions: #{filter_conditions.inspect}"
-        
-        with_subprojects = Setting.display_subprojects_issues?
-        base_scope = Issue.visible.where(@project.project_condition(with_subprojects))
-        
-        # Apply filter conditions globally
-        if filter_conditions.any?
-          filter_scope = base_scope.where(filter_conditions)
-        else
-          filter_scope = base_scope
-        end
-        
-        Rails.logger.info "Base scope count: #{base_scope.count}"
-        Rails.logger.info "Filtered scope count: #{filter_scope.count}"
-        
-        # Filter each report data array with correct field key mappings
-        field_mapping = {
-          'tracker' => { field_key: :tracker_id, instance_var: :@issues_by_tracker },
-          'version' => { field_key: :fixed_version_id, instance_var: :@issues_by_version },
-          'priority' => { field_key: :priority_id, instance_var: :@issues_by_priority },
-          'category' => { field_key: :category_id, instance_var: :@issues_by_category },
-          'assigned_to' => { field_key: :assigned_to_id, instance_var: :@issues_by_assigned_to },
-          'author' => { field_key: :author_id, instance_var: :@issues_by_author },
-          'subproject' => { field_key: :project_id, instance_var: :@issues_by_subproject }
-        }
-        
-        field_mapping.each do |field_name, config|
-          field_key = config[:field_key]
-          instance_var = config[:instance_var]
-          
-          original_data = instance_variable_get(instance_var)
-          next unless original_data.is_a?(Array) && original_data.any?
-          
-          Rails.logger.info "Filtering #{field_name} data with field_key: #{field_key}..."
-          
-          # Get unique field values from original data
-          unique_values = original_data.map { |entry| entry[field_key.to_s] }.uniq
-          
-          filtered_data = []
-          
-          unique_values.each do |field_value|
-            # Count issues matching the field and filter conditions
-            if field_value.present?
-              field_condition = { field_key => field_value }
-            else
-              field_condition = { field_key => nil }
-            end
-            
-            count_scope = filter_scope.where(field_condition)
-            
-            # Only include if there are matching issues
-            if count_scope.any?
-              # Get status counts
-              status_counts = count_scope.joins(:status)
-                                        .group(:status_id, :is_closed)
-                                        .count
-              
-              status_counts.each do |(status_id, is_closed), count|
-                is_closed_bool = ['t', 'true', '1'].include?(is_closed.to_s)
-                
-                entry = {
-                  "status_id" => status_id.to_s,
-                  "closed" => is_closed_bool,
-                  field_key.to_s => field_value.to_s,
-                  "total" => count.to_s
-                }
-                
-                filtered_data << entry
-              end
-            end
-          end
-          
-          instance_variable_set(instance_var, filtered_data)
-          Rails.logger.info "Filtered #{field_name} data count: #{filtered_data.size}"
         end
       end
       
