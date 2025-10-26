@@ -30,13 +30,6 @@ module IssueSummaryFilterHook
       # Check if user has permission to view issues
       return '' unless User.current.allowed_to?(:view_issues, project)
       
-      Rails.logger.info "=== Issue Summary Filter Hook Debug ==="
-      Rails.logger.info "Hook called from: #{caller[0]}"
-      Rails.logger.info "Project: #{project.name}"
-      Rails.logger.info "User: #{User.current.name}"
-      Rails.logger.info "Controller: #{context[:controller].controller_name}"
-      Rails.logger.info "Action: #{context[:controller].action_name}"
-      
       begin
         # Get filter params from controller instance variable if available
         controller = context[:controller]
@@ -46,13 +39,10 @@ module IssueSummaryFilterHook
           controller.params[:filter]
         end
         
-        Rails.logger.info "Filter params for view: #{filter_params.inspect}"
-        
         result = context[:controller].render_to_string(
           partial: 'reports/filter_panel',
           locals: { project: project, filter_params: filter_params }
         )
-        Rails.logger.info "Filter panel rendered successfully, length: #{result.length}"
         result
       rescue => e
         Rails.logger.error "Error rendering filter panel: #{e.message}"

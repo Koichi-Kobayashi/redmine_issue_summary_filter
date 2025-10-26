@@ -82,20 +82,6 @@
 }
 </style>
 
-<% 
-  Rails.logger.info "=== FILTER PANEL RENDERING DEBUG ==="
-  Rails.logger.info "filter_params: #{filter_params.inspect}"
-  Rails.logger.info "filter_params is nil?: #{filter_params.nil?}"
-  Rails.logger.info "filter_params is present?: #{filter_params.present?}"
-  if filter_params
-    Rails.logger.info "filter_params[:category_id]: #{filter_params[:category_id].inspect}"
-    if filter_params[:category_id]
-      Rails.logger.info "filter_params[:category_id] include '5'?: #{filter_params[:category_id].include?('5')}"
-      Rails.logger.info "filter_params[:category_id] include 5?: #{filter_params[:category_id].include?(5)}"
-    end
-  end
-%>
-
 <div id="redmine-issue-summary-filter-panel" class="filter-panel">
   <h3>🔍 チケットフィルター</h3>
   
@@ -176,10 +162,7 @@
             <select id="filter_category_id" name="filter[category_id][]" multiple class="filter-select filter-multi-select">
               <option value="">すべて</option>
               <% project.issue_categories.each do |category| %>
-                <% 
-                  should_select = filter_params && filter_params[:category_id] && filter_params[:category_id].include?(category.id.to_s)
-                  Rails.logger.info "Category #{category.id} (#{category.name}): should_select=#{should_select}, category_id in filter_params: #{(filter_params && filter_params[:category_id] && filter_params[:category_id].include?(category.id.to_s)).inspect}"
-                %>
+                <% should_select = filter_params && filter_params[:category_id] && filter_params[:category_id].include?(category.id.to_s) %>
                 <option value="<%= category.id %>" <%= 'selected' if should_select %>>
                   <%= category.name %>
                 </option>
@@ -213,14 +196,10 @@
 
 <script>
 function applyFilter() {
-  console.log('=== APPLY FILTER CALLED ===');
-  console.log('Applying filter...');
   const form = document.getElementById('redmine-issue-filter-form');
   if (!form) {
-    console.error('Filter form not found');
     return;
   }
-  console.log('Filter form found:', form);
   
   // フォームのaction属性を設定
   const currentPath = window.location.pathname;
@@ -234,12 +213,10 @@ function applyFilter() {
   
   if (createdOnFrom && createdOnFrom.value) {
     params.append('filter[created_on_from]', createdOnFrom.value);
-    console.log('Created on from:', createdOnFrom.value);
   }
   
   if (createdOnTo && createdOnTo.value) {
     params.append('filter[created_on_to]', createdOnTo.value);
-    console.log('Created on to:', createdOnTo.value);
   }
   
   // フィルターパラメータを構築
@@ -248,30 +225,21 @@ function applyFilter() {
     const fieldName = select.name;
     const selectedValues = Array.from(select.selectedOptions).map(option => option.value);
     
-    console.log(`Field ${fieldName}: selected values =`, selectedValues);
-    
     // 「すべて」が選択されているかチェック
     const hasAllSelected = selectedValues.includes('');
     const hasOtherValues = selectedValues.some(v => v !== '');
     
     if (hasAllSelected && hasOtherValues) {
       // 「すべて」と他の値が両方選択されている場合は、「すべて」を優先
-      console.log(`Field ${fieldName}: All selected, skipping filter`);
     } else if (hasOtherValues) {
       // 他の値が選択されている場合は、それらの値のみを送信
       selectedValues.filter(v => v !== '').forEach(value => {
         params.append(fieldName, value);
       });
-      console.log(`Field ${fieldName}: Sending values:`, selectedValues.filter(v => v !== ''));
-    } else {
-      // 「すべて」のみが選択されている場合は、フィルターを送信しない
-      console.log(`Field ${fieldName}: All selected, no filter applied`);
     }
   });
   
   const url = currentPath + '?' + params.toString();
-  console.log('Final URL:', url);
-  console.log('Params:', params.toString());
   window.location.href = url;
 }
 
@@ -346,8 +314,6 @@ function loadFilter() {
   }
 }
 
-console.log('Redmine Issue Summary Filter loaded');
-
 // コンボボックスの選択状態を管理
 function setupSelectBehavior() {
   const selects = document.querySelectorAll('.filter-multi-select');
@@ -369,14 +335,12 @@ function setupSelectBehavior() {
         if (allOption) {
           allOption.selected = false;
         }
-        console.log(`Removed "All" selection from ${this.name}`);
       } else if (!hasAllSelected && !hasOtherValues) {
         // 何も選択されていない場合は、「すべて」を選択
         const allOption = this.querySelector('option[value=""]');
         if (allOption) {
           allOption.selected = true;
         }
-        console.log(`Set "All" selection for ${this.name}`);
       }
     });
   });
@@ -400,8 +364,6 @@ function restoreFilterFromURL() {
     }
   });
   
-  console.log('Restoring filter from URL:', filterParams);
-  
   // 各selectを更新
   const selects = document.querySelectorAll('.filter-multi-select');
   selects.forEach(select => {
@@ -409,7 +371,6 @@ function restoreFilterFromURL() {
     const match = select.name.match(/filter\[(.+)\]\[\]/);
     if (match) {
       const fieldName = match[1];
-      console.log(`Field ${fieldName}: checking for values`, filterParams[fieldName]);
       
       if (filterParams[fieldName]) {
         Array.from(select.options).forEach(option => {
@@ -425,8 +386,6 @@ function restoreFilterFromURL() {
 
 // フィルターパネルをレポートの下に移動
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOM loaded, checking for filter panel...');
-  
   // URLパラメータから選択状態を復元（サーバーサイドで選択されていない場合のみ）
   // RubyのERBで既に選択されている場合は、JavaScriptで上書きしない
   // restoreFilterFromURL();
@@ -434,22 +393,16 @@ document.addEventListener('DOMContentLoaded', function() {
   // 既存のフィルターパネルをチェック
   let existingPanel = document.getElementById('redmine-issue-summary-filter-panel');
   if (existingPanel) {
-    console.log('Filter panel found, moving to report section...');
-    
     // 「レポート」の見出しを探す
     const reportHeading = document.querySelector('h2');
     if (reportHeading && reportHeading.textContent.includes('レポート')) {
       // レポート見出しの直後に挿入
       reportHeading.parentNode.insertBefore(existingPanel, reportHeading.nextSibling);
-      console.log('Filter panel moved to after report heading');
     } else {
       // フォールバック: レポートテーブルの最初の前に挿入
       const firstTable = document.querySelector('table');
       if (firstTable) {
         firstTable.parentNode.insertBefore(existingPanel, firstTable);
-        console.log('Filter panel moved to before first table');
-      } else {
-        console.log('Could not find suitable insertion point');
       }
     }
     
@@ -458,7 +411,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (filterForm) {
       const currentPath = window.location.pathname;
       filterForm.action = currentPath;
-      console.log('Form action set to:', currentPath);
       
       // フォームの送信イベントを追加
       filterForm.addEventListener('submit', function(e) {
@@ -469,8 +421,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // コンボボックスの動作を設定
     setupSelectBehavior();
-  } else {
-    console.log('No existing filter panel found');
   }
 });
 </script>

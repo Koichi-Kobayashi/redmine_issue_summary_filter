@@ -4,9 +4,6 @@ module IssueSummaryFilterReportsExtension
   def self.included(base)
     base.class_eval do
       def issue_report_with_original_filter
-        Rails.logger.info "=== Issue Summary Filter Extension Called ==="
-        Rails.logger.info "Filter params: #{params[:filter].inspect}"
-        
         # Parse and permit filter parameters
         filter_conditions = {}
         @saved_filter_params = params[:filter] # Save for view rendering
@@ -16,7 +13,6 @@ module IssueSummaryFilterReportsExtension
             filter_params = params[:filter].permit! if params[:filter].respond_to?(:permit!)
             params[:filter] = filter_params if filter_params
             @saved_filter_params = filter_params # Save the permitted params
-            Rails.logger.info "Permitted filter params: #{params[:filter].inspect}"
             
             # Build filter conditions
             if params[:filter] && params[:filter].to_h
@@ -25,13 +21,10 @@ module IssueSummaryFilterReportsExtension
               filter_hash.each do |key, values|
                 if values.is_a?(Array) && values.any?(&:present?)
                   filter_conditions[key.to_sym] = values.reject(&:blank?).map(&:to_i)
-                  Rails.logger.info "Added #{key} condition: #{filter_conditions[key.to_sym]}"
                 elsif key.to_s == 'created_on_from' && values.present?
                   filter_conditions[:created_on_from] = values
-                  Rails.logger.info "Added created_on_from condition: #{values}"
                 elsif key.to_s == 'created_on_to' && values.present?
                   filter_conditions[:created_on_to] = values
-                  Rails.logger.info "Added created_on_to condition: #{values}"
                 end
               end
             end
@@ -46,8 +39,6 @@ module IssueSummaryFilterReportsExtension
         
         # If filters exist, get filtered data BEFORE calling original method
         if filter_conditions.any?
-          Rails.logger.info "Applying filter conditions BEFORE calling original: #{filter_conditions.inspect}"
-          
           # Get filtered data before original method is called
           get_filtered_report_data(filter_conditions)
         else
@@ -57,9 +48,6 @@ module IssueSummaryFilterReportsExtension
         
         # Restore filter
         params[:filter] = old_filter if old_filter
-        
-        # If filters were applied, we already have the filtered data
-        Rails.logger.info "After filtering - @issues_by_tracker count: #{@issues_by_tracker&.size || 0}"
       end
       
       def get_filtered_report_data(filter_conditions)
@@ -89,9 +77,6 @@ module IssueSummaryFilterReportsExtension
           # Include the entire end date (until end of day)
           filtered_scope = filtered_scope.where('issues.created_on <= ?', "#{filter_conditions[:created_on_to]} 23:59:59")
         end
-        
-        Rails.logger.info "Base scope count: #{base_scope.count}"
-        Rails.logger.info "Filtered scope count: #{filtered_scope.count}"
         
         # Get statuses for the view
         @statuses = @project.rolled_up_statuses
