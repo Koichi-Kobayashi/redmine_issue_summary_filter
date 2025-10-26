@@ -1,0 +1,24 @@
+<%= form_tag({:controller => 'settings', :action => 'plugin', :id => 'redmine_issue_summary_filter'}, :method => :post, :class => 'tabular') do %>
+  <div class="box">
+    <h3><%= l(:label_redmine_issue_summary_filter_settings, :scope => [:redmine_issue_summary_filter]) %></h3>
+    
+    <p>
+      <%= content_tag :label, l(:label_enable_filter, :scope => [:redmine_issue_summary_filter]) %>
+      <%= check_box_tag 'settings[enable_filter]', '1', @settings['enable_filter'] == '1' %>
+    </p>
+    
+    <p>
+      <%= content_tag :label, l(:label_show_filter_panel, :scope => [:redmine_issue_summary_filter]) %>
+      <%= check_box_tag 'settings[show_filter_panel]', '1', @settings['show_filter_panel'] == '1' %>
+    </p>
+    
+    <p>
+      <%= content_tag :label, l(:label_default_filter_fields, :scope => [:redmine_issue_summary_filter]) %>
+      <%= text_field_tag 'settings[default_filter_fields]', @settings['default_filter_fields'], :size => 50 %>
+      <br>
+      <em><%= l(:label_default_filter_fields_help, :scope => [:redmine_issue_summary_filter]) %></em>
+    </p>
+  </div>
+  
+  <%= submit_tag l(:button_save) %>
+<% end %>

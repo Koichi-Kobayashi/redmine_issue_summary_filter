@@ -1,0 +1,18 @@
+ja:
+  redmine_issue_summary_filter:
+    label_redmine_issue_summary_filter: "Redmineチケットサマリーフィルター"
+    label_filtered_issues: "フィルター結果"
+    label_filtered_issues_count: "%{count}件のチケットが見つかりました"
+    label_total_issues: "合計 %{count} 件"
+    label_displayed_issues: "表示中 %{count} 件"
+    label_showing_first_n_issues: "最初の %{count} 件を表示しています"
+    label_view_all_issues_in_issues_page: "すべてのチケットを表示するには、チケット一覧ページをご利用ください"
+    label_redmine_issue_summary_filter_settings: "Redmineチケットサマリーフィルター設定"
+    label_enable_filter: "フィルターを有効にする"
+    label_show_filter_panel: "フィルターパネルを表示"
+    label_default_filter_fields: "デフォルトフィルターフィールド"
+    label_default_filter_fields_help: "フィルターパネルに表示するフィールドをカンマ区切りで指定"
+    button_apply_filter: "フィルター適用"
+    button_clear_filter: "フィルタークリア"
+    error_filter_save_failed: "フィルター設定の保存に失敗しました"
+    notice_successful_create: "フィルター設定が正常に保存されました"

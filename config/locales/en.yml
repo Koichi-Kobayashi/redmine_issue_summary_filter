@@ -1,0 +1,18 @@
+en:
+  redmine_issue_summary_filter:
+    label_redmine_issue_summary_filter: "Redmine Issue Summary Filter"
+    label_filtered_issues: "Filtered Issues"
+    label_filtered_issues_count: "%{count} issues found"
+    label_total_issues: "Total %{count} issues"
+    label_displayed_issues: "Displaying %{count} issues"
+    label_showing_first_n_issues: "Showing first %{count} issues"
+    label_view_all_issues_in_issues_page: "To view all issues, please use the issues page"
+    label_redmine_issue_summary_filter_settings: "Redmine Issue Summary Filter Settings"
+    label_enable_filter: "Enable Filter"
+    label_show_filter_panel: "Show Filter Panel"
+    label_default_filter_fields: "Default Filter Fields"
+    label_default_filter_fields_help: "Comma-separated list of fields to show in filter panel"
+    button_apply_filter: "Apply Filter"
+    button_clear_filter: "Clear Filter"
+    error_filter_save_failed: "Failed to save filter settings"
+    notice_successful_create: "Filter settings saved successfully"

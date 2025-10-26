@@ -1,0 +1,60 @@
+<div class="filtered-issues-list">
+  <% if @filtered_issues && @filtered_issues.any? %>
+    <div class="filter-results-header">
+      <h4><%= l(:label_filtered_issues, :scope => [:redmine_issue_summary_filter]) %></h4>
+      <div class="filter-stats">
+        <span class="total-count">
+          <%= l(:label_total_issues, :count => @filtered_issues_count, :scope => [:redmine_issue_summary_filter]) %>
+        </span>
+        <% if @filtered_issues_count > @filtered_issues.size %>
+          <span class="displayed-count">
+            (<%= l(:label_displayed_issues, :count => @filtered_issues.size, :scope => [:redmine_issue_summary_filter]) %>)
+          </span>
+        <% end %>
+      </div>
+    </div>
+    
+    <table class="list issues">
+      <thead>
+        <tr>
+          <th><%= l(:field_id) %></th>
+          <th><%= l(:field_tracker) %></th>
+          <th><%= l(:field_subject) %></th>
+          <th><%= l(:field_status) %></th>
+          <th><%= l(:field_priority) %></th>
+          <th><%= l(:field_assigned_to) %></th>
+          <th><%= l(:field_updated_on) %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @filtered_issues.each do |issue| %>
+          <tr class="<%= issue.css_classes %>">
+            <td><%= link_to "##{issue.id}", issue_path(issue) %></td>
+            <td><%= issue.tracker.name %></td>
+            <td><%= link_to issue.subject, issue_path(issue) %></td>
+            <td><%= issue.status.name %></td>
+            <td><%= issue.priority.name %></td>
+            <td><%= issue.assigned_to&.name || '-' %></td>
+            <td><%= format_time(issue.updated_on) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    
+    <% if @filtered_issues_count > @filtered_issues.size %>
+      <div class="filter-pagination-info">
+        <p class="pagination-info">
+          <%= l(:label_showing_first_n_issues, :count => @filtered_issues.size, :scope => [:redmine_issue_summary_filter]) %>
+        </p>
+        <p class="view-all-info">
+          <%= l(:label_view_all_issues_in_issues_page, :scope => [:redmine_issue_summary_filter]) %>
+        </p>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="no-results">
+      <h4><%= l(:label_filtered_issues, :scope => [:redmine_issue_summary_filter]) %></h4>
+      <p class="nodata"><%= l(:label_no_data) %></p>
+    </div>
+  <% end %>
+</div>
