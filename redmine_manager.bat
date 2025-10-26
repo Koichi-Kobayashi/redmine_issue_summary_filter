@@ -15,7 +15,7 @@ if "%choice%"=="1" (
 ) else if "%choice%"=="2" (
     call stop_redmine.bat
 ) else if "%choice%"=="3" (
-    call restart_redmine.bat
+    call start_redmine.bat
 ) else if "%choice%"=="4" (
     echo.
     echo Checking Redmine server status...

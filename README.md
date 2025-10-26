@@ -51,8 +51,7 @@
 | ファイル名 | 機能 | 説明 |
 |-----------|------|------|
 | **redmine_manager.bat** | メインメニュー | 統合管理スクリプト（起動・停止・再起動・ステータス確認を選択可能） |
-| **start_redmine.bat** | サーバー起動 | Rubyプロセスを停止→プラグインをコピー→マイグレーション実行→サーバー起動 |
-| **restart_redmine.bat** | サーバー再起動 | Rubyプロセスを停止→プラグインをコピー→マイグレーション実行→サーバー起動 |
+| **start_redmine.bat** | サーバー起動 | Rubyプロセスを停止→待機→プラグインをコピー→マイグレーション実行→サーバー起動 |
 | **stop_redmine.bat** | サーバー停止 | Rubyプロセスを停止 |
 
 ### 実行手順
@@ -65,9 +64,8 @@
 
 2. **直接実行**:
    ```bash
-   start_redmine.bat    # サーバーを起動
-   stop_redmine.bat    # サーバーを停止
-   restart_redmine.bat # サーバーを再起動
+   start_redmine.bat # サーバーを起動（または再起動）
+   stop_redmine.bat # サーバーを停止
    ```
 
 ### 注意事項

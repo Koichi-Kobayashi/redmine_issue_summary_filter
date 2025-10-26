@@ -9,16 +9,19 @@ REM 既存のRubyプロセスを停止
 echo Stopping existing Ruby processes...
 taskkill /f /im ruby.exe >nul 2>&1
 
+REM 少し待機
+timeout /t 2 /nobreak >nul
+
 REM プロジェクトディレクトリに移動
 cd /d "%~dp0"
 
 REM srcフォルダーをプラグインフォルダーにコピー
 echo Copying src folder to plugin directory...
 if exist "src" (
-    if exist "../redmine/plugins/redmine_issue_summary_filter" (
-        rmdir /s /q "../redmine/plugins/redmine_issue_summary_filter"
+    if exist "../redmine\plugins\redmine_issue_summary_filter" (
+        rmdir /s /q "../redmine\plugins\redmine_issue_summary_filter"
     )
-    xcopy "src" "../redmine/plugins/redmine_issue_summary_filter" /e /i /h /y
+    xcopy "src" "../redmine\plugins\redmine_issue_summary_filter" /e /i /h /y
     echo Plugin copied successfully.
 ) else (
     echo Warning: src folder not found!
