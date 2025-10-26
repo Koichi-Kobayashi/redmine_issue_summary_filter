@@ -26,6 +26,12 @@ module IssueSummaryFilterReportsExtension
                 if values.is_a?(Array) && values.any?(&:present?)
                   filter_conditions[key.to_sym] = values.reject(&:blank?).map(&:to_i)
                   Rails.logger.info "Added #{key} condition: #{filter_conditions[key.to_sym]}"
+                elsif key.to_s == 'created_on_from' && values.present?
+                  filter_conditions[:created_on_from] = values
+                  Rails.logger.info "Added created_on_from condition: #{values}"
+                elsif key.to_s == 'created_on_to' && values.present?
+                  filter_conditions[:created_on_to] = values
+                  Rails.logger.info "Added created_on_to condition: #{values}"
                 end
               end
             end
@@ -70,7 +76,19 @@ module IssueSummaryFilterReportsExtension
         
         # Get base issue scope with filters
         base_scope = Issue.visible.where(@project.project_condition(with_subprojects))
-        filtered_scope = base_scope.where(filter_conditions)
+        
+        # Apply regular filter conditions (excluding date conditions)
+        filtered_scope = base_scope.where(filter_conditions.reject { |k| [:created_on_from, :created_on_to].include?(k) })
+        
+        # Apply date conditions separately
+        if filter_conditions[:created_on_from].present?
+          filtered_scope = filtered_scope.where('issues.created_on >= ?', filter_conditions[:created_on_from])
+        end
+        
+        if filter_conditions[:created_on_to].present?
+          # Include the entire end date (until end of day)
+          filtered_scope = filtered_scope.where('issues.created_on <= ?', "#{filter_conditions[:created_on_to]} 23:59:59")
+        end
         
         Rails.logger.info "Base scope count: #{base_scope.count}"
         Rails.logger.info "Filtered scope count: #{filtered_scope.count}"

@@ -54,6 +54,10 @@
   cursor: pointer;
   font-size: 11px;
   margin-right: 5px;
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .filter-actions button:hover {
@@ -70,6 +74,9 @@
   padding: 8px;
   border: 1px solid #ced4da;
   border-radius: 4px;
+}
+
+.filter-multi-select {
   min-height: 80px;
   height: auto;
 }
@@ -95,6 +102,22 @@
   <form method="get" id="redmine-issue-filter-form">
     <div class="filter-container">
       <div class="filter-rows">
+        <div class="filter-row">
+          <div class="filter-field">
+            <label for="filter_created_on_from">作成日（開始）</label>
+            <input type="date" id="filter_created_on_from" name="filter[created_on_from]" 
+                   value="<%= filter_params && filter_params[:created_on_from] ? filter_params[:created_on_from] : '' %>" 
+                   class="filter-select">
+          </div>
+          
+          <div class="filter-field">
+            <label for="filter_created_on_to">作成日（終了）</label>
+            <input type="date" id="filter_created_on_to" name="filter[created_on_to]" 
+                   value="<%= filter_params && filter_params[:created_on_to] ? filter_params[:created_on_to] : '' %>" 
+                   class="filter-select">
+          </div>
+        </div>
+        
         <div class="filter-row">
           <div class="filter-field">
             <label for="filter_status_id">ステータス</label>
@@ -181,7 +204,6 @@
       <div class="filter-actions">
         <button type="button" onclick="applyFilter()">フィルター適用</button>
         <button type="button" onclick="clearFilter()">クリア</button>
-        <button type="button" onclick="resetFilter()">リセット</button>
         <button type="button" onclick="saveFilter()">保存</button>
         <button type="button" onclick="loadFilter()">読み込み</button>
       </div>
@@ -205,6 +227,20 @@ function applyFilter() {
   form.action = currentPath;
   
   const params = new URLSearchParams();
+  
+  // 日付フィルターパラメータを追加
+  const createdOnFrom = document.getElementById('filter_created_on_from');
+  const createdOnTo = document.getElementById('filter_created_on_to');
+  
+  if (createdOnFrom && createdOnFrom.value) {
+    params.append('filter[created_on_from]', createdOnFrom.value);
+    console.log('Created on from:', createdOnFrom.value);
+  }
+  
+  if (createdOnTo && createdOnTo.value) {
+    params.append('filter[created_on_to]', createdOnTo.value);
+    console.log('Created on to:', createdOnTo.value);
+  }
   
   // フィルターパラメータを構築
   const selects = document.querySelectorAll('.filter-multi-select');
@@ -240,18 +276,26 @@ function applyFilter() {
 }
 
 function clearFilter() {
+  // すべての選択を「すべて」にリセット
   const selects = document.querySelectorAll('.filter-multi-select');
   selects.forEach(select => {
-    select.selectedIndex = -1;
+    // すべての選択を解除
+    Array.from(select.options).forEach(option => {
+      option.selected = false;
+    });
+    // 「すべて」を選択
+    const allOption = select.querySelector('option[value=""]');
+    if (allOption) {
+      allOption.selected = true;
+    }
   });
-  applyFilter();
-}
-
-function resetFilter() {
-  const selects = document.querySelectorAll('.filter-multi-select');
-  selects.forEach(select => {
-    select.selectedIndex = 0; // 「すべて」を選択
-  });
+  
+  // 日付フィールドもクリア
+  const createdOnFrom = document.getElementById('filter_created_on_from');
+  const createdOnTo = document.getElementById('filter_created_on_to');
+  if (createdOnFrom) createdOnFrom.value = '';
+  if (createdOnTo) createdOnTo.value = '';
+  
   applyFilter();
 }
 
